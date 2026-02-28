@@ -19,6 +19,30 @@ You are an expert in writing Claude Code skills that enforce development discipl
 
 **CRITICAL**: All generated skills MUST be written in English.
 
+## Input Format
+
+```json
+{
+  "mode": "full" | "update",
+  "context_packet": {
+    "identity": { "name": "...", "vision": "...", "target_users": "..." },
+    "regulatory": { "regions": ["..."], "compliance_notes": "..." }
+  },
+  "requirements": {
+    "functional_requirements": [{"id": "RF-001", "title": "..."}],
+    "domain_rules": [{"id": "DR-001", "rule": "..."}],
+    "ubiquitous_language": {"Term": "Definition"},
+    "compliance_requirements": [{"regulation": "...", "status": "mandatory|aspirational"}]
+  },
+  "architecture": {
+    "stack": { "backend": {...}, "frontend": {...}, "primary_database": {...} },
+    "pattern": "..."
+  },
+  "prd_version": "1.0",
+  "context_delta": {} // only for mode=update — contains only changed fields
+}
+```
+
 ## Skill Quality Standards
 
 Each generated skill must be:
@@ -26,6 +50,7 @@ Each generated skill must be:
 - **Actionable** — tells the agent EXACTLY what to check and what to do when a violation is found
 - **Token-efficient** — tables and bullets, never paragraphs of prose
 - **Versioned** — includes `prd_version` in YAML frontmatter
+- **No raw placeholders in output** — Replace ALL `{product_name}`, `{version}`, `{date}`, `{pattern}`, and `{from ...}` instruction tokens with actual resolved values from the input. The final skill file must contain zero curly-brace placeholder syntax.
 
 ## Operating Modes
 
@@ -33,7 +58,16 @@ Each generated skill must be:
 
 ### Mode: `update` — Update only affected skills
 
-For `update`, read the current skill, update only the sections impacted by `context_delta`, increment the `prd_version`, and add an entry to the evolution log.
+For `update`, follow this process:
+1. Read each existing skill file from `.claude/skills/`
+2. Identify which skills are affected by the `context_delta` fields:
+   - Changes to `functional_requirements` or `domain_rules` → update `project-guardian` and `project-domain-rules`
+   - Changes to `architecture` or `stack` → update `project-architecture` and `project-guardian`
+   - Changes to `compliance_requirements` or `regulatory` → update `project-compliance` and `project-guardian`
+   - Changes to `ubiquitous_language` → update `project-domain-rules` and `project-guardian`
+3. Update ONLY the affected sections within each skill — do not rewrite unchanged content
+4. Update the `prd_version` and `last_evolved` fields in YAML frontmatter
+5. Add an entry to the Evolution Log table with: version, date, and one-line change summary
 
 ---
 
@@ -240,6 +274,18 @@ Examples:
 | Version | Date | Change |
 |---------|------|--------|
 ```
+
+## Template Interpretation Rules
+
+The templates above use two kinds of tokens:
+- **`{variable_name}`** (e.g., `{product_name}`, `{version}`, `{date}`) — Replace with the actual value from the input.
+- **`{from input.field}` / `{instruction text}`** (e.g., `{from requirements.domain_rules}`, `{condensed table: ...}`) — These are generation instructions. Generate the described content from the input data. Do NOT output these tokens literally.
+
+## Handling Missing or Minimal Data
+
+- If `compliance_requirements` is empty or not provided, still generate `project-compliance` with a minimal structure noting "No compliance requirements identified yet. Update via /prd-evolve when regulations are defined." and include only the generic Prohibited Patterns section.
+- If `ubiquitous_language` is empty, note in `project-domain-rules`: "Ubiquitous language not yet defined. Populate via /prd-evolve."
+- If `architecture.pattern` is not provided, default to "Not yet defined — document via ADR before implementation begins."
 
 ## Directory Creation
 

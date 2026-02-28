@@ -28,10 +28,31 @@ You are a technical writer who produces engineering-grade product documentation.
 {
   "mode": "full",
   "context_packet": { ... },
+  "requirements": {
+    "functional_requirements": [...],
+    "non_functional_requirements": [...],
+    "domain_rules": [...],
+    "compliance_requirements": [...],
+    "out_of_scope": [...],
+    "ubiquitous_language": [...]
+  },
+  "architecture": {
+    "stack": { ... },
+    "pattern": "...",
+    "system_diagram_mermaid": "...",
+    "er_diagram_mermaid": "...",
+    "layer_structure": "...",
+    "cross_cutting": { ... },
+    "adrs": [...],
+    "compatibility_notes": "..."
+  },
+  "research_refs": [],
   "include_er": true | false,
   "prd_version": "1.0"
 }
 ```
+
+> Note: `requirements` and `architecture` may be embedded inside `context_packet` or passed as top-level fields. Check both locations.
 
 Create the following directory structure if it doesn't exist:
 ```bash
@@ -143,6 +164,7 @@ Write `docs/prd/PRD.md`:
 | Topic | Source | URL | Validated |
 |-------|--------|-----|-----------|
 {from context_packet.research_refs — all validated sources}
+{if research_refs is empty, write: "No external research sources were required for this version. Sources will be added as the product evolves."}
 
 ---
 
@@ -232,16 +254,28 @@ Write `docs/prd/ER.md`:
   "sections_to_update": ["§2", "§3.5"],
   "change_description": "...",
   "new_prd_version": "1.3",
-  "research_refs": [...],
+  "delta": {
+    "new_requirements": [{"id": "RF-XXX", "title": "...", "phase": "MVP", "acceptance_criteria": ["..."]}],
+    "updated_requirements": [{"id": "RF-XXX", "changes": "..."}],
+    "removed_requirement_ids": ["RF-XXX"],
+    "new_nfrs": [{"id": "RNF-XXX", "title": "..."}],
+    "new_domain_rules": [{"id": "DR-XXX", "rule": "..."}],
+    "new_integrations": [{"name": "...", "type": "..."}]
+  },
+  "research_refs": [],
   "current_prd_path": "docs/prd/PRD.md"
 }
 ```
 
+> Note: `delta` fields are optional — include only the keys relevant to the change. If `delta` is absent, infer changes from `change_description`.
+
 Process:
-1. Read the current file
-2. Update ONLY the specified sections
-3. Update the version header and "Evolution History" table
-4. Do not modify any other section
+1. Read the current file at `current_prd_path`
+2. Update ONLY the sections listed in `sections_to_update` — use structured data from `delta` when available; fall back to `change_description` for unstructured changes
+3. Update the version header: set `Version` to `new_prd_version` and `Last Updated` to today's date
+4. Append a new row to §8 Evolution History: `| {new_prd_version} | {date} | {change_description} | {comma-separated list of updated sections} |`
+5. Do not modify any section not listed in `sections_to_update` (except the version header and §8, which are always updated)
+6. Write the updated file back to `current_prd_path`
 
 ## Writing Standards
 

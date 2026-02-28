@@ -97,6 +97,7 @@ Dispatch `prd-writer` with:
   "sections_to_update": ["<list from delta>"],
   "change_description": "$1",
   "new_prd_version": "<delta.new_prd_version>",
+  "delta": "<structured delta from requirements-analyst: new/updated/removed requirements, NFRs, domain rules, integrations>",
   "research_refs": "<new validated refs>",
   "current_prd_path": "docs/prd/PRD.md"
 }
