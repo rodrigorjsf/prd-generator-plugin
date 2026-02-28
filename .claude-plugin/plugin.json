@@ -1,0 +1,19 @@
+{
+  "name": "prd-generator",
+  "version": "1.0.0",
+  "description": "AI-powered PRD generator with official-source research validation and self-evolving project skills for AI-assisted development",
+  "author": {
+    "name": "rodrigo"
+  },
+  "license": "MIT",
+  "keywords": [
+    "prd",
+    "product-requirements",
+    "architecture",
+    "documentation",
+    "ai-development",
+    "clean-architecture",
+    "ddd",
+    "research-validation"
+  ]
+}

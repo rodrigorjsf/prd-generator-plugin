@@ -1,0 +1,291 @@
+---
+description: Generate a complete PRD with research, architecture, and project skills
+argument-hint: [initial product description]
+allowed-tools: AskUserQuestion, Agent, Read, Write, Edit, Bash, TodoWrite, WebSearch, WebFetch
+model: opus
+---
+
+# /prd-new — PRD Generator
+
+You are orchestrating a comprehensive PRD generation workflow. Your role is to gather rich product context through interactive interrogation, validate technical research against official sources only, design a modern architecture, and produce a complete set of documents and enforcement skills.
+
+**CRITICAL RULES:**
+- All generated files MUST be written in English regardless of the user's language
+- Respond to the user in whatever language they write to you
+- Every phase produces a structured JSON artifact passed to the next phase
+- Dispatch research agents as soon as a technology or regulated domain is identified — do NOT wait for interrogation to complete
+- Never use forums, blogs, or social media as research sources
+
+---
+
+## PHASE 0 — Initialize
+
+Create tasks to track progress:
+1. Interrogation
+2. Research & Validation
+3. Requirements Analysis
+4. Architecture Design
+5. Document Generation
+6. Skills & Guides Generation
+7. Commit
+
+Initialize a `context_packet` object (held in memory throughout):
+```json
+{
+  "meta": { "initiated_at": "<timestamp>", "language": "<user_language>" },
+  "identity": {},
+  "business": {},
+  "features": {},
+  "regulatory": {},
+  "integrations": {},
+  "infrastructure": {},
+  "stack": {},
+  "research_refs": [],
+  "pending_research": []
+}
+```
+
+If the user provided `$1` (initial description), store it in `context_packet.meta.initial_description` and use it to pre-fill any obvious fields.
+
+---
+
+## PHASE 1 — Product Interrogation (interactive)
+
+Mark task "Interrogation" as in_progress.
+
+Conduct the interrogation in **blocks**. Use `AskUserQuestion` — maximum 4 questions per call, one topic per question. After each block, check `pending_research` and dispatch `official-researcher` agents for any identified technology or regulated domain.
+
+### Block 1 — Identity
+Ask (adapt/skip if already clear from $1):
+1. "What is the product name and one-sentence vision?" (open text)
+2. "Who is the primary target user?" — options: B2C Consumers / B2B Companies / Internal Teams / Developers/API consumers
+3. "What core problem does it solve? What is the main user pain?" (open text)
+4. "Who are the main competitors or alternatives users rely on today?" (open text)
+
+Store in `context_packet.identity`. Add any identified domains to `pending_research`.
+
+### Block 2 — Business Model
+Ask:
+1. "What is the monetization model?" — options: SaaS subscription / Marketplace/commission / One-time purchase / Freemium / Usage-based billing
+2. "What are the top 3 KPIs that define success for this product?" (open text)
+3. "What is the target scale at launch vs. 12 months?" — options: <1k users / 1k–50k users / 50k–500k users / 500k+ users
+
+Store in `context_packet.business`.
+
+### Block 3 — Core Features
+Ask:
+1. "List the 5 most critical features for MVP — one per line." (open text)
+2. "Which features are explicitly out of scope for MVP?" (open text)
+3. "Are there any features that require real-time processing (chat, notifications, live data)?" — options: Yes / No
+4. "Will the product need a mobile app?" — options: Native iOS + Android / Mobile web only / Not needed / Both native and web
+
+Store in `context_packet.features`. Add real-time tech, mobile frameworks to `pending_research` if applicable.
+
+### Block 4 — Regulatory & Compliance
+Ask:
+1. "In which countries/regions will this product operate?" (open text)
+2. "Does the product handle personal data of EU/BR residents?" — options: Yes EU (GDPR) / Yes BR (LGPD) / Both / No
+3. "Does it process payments or handle financial data?" — options: Yes (payments) / Yes (financial data only) / No
+4. "Does it operate in a regulated sector?" — options: Healthcare / Fintech/Banking / Education / Government / None of the above
+
+Store in `context_packet.regulatory`. Add identified compliance frameworks (LGPD, PCI-DSS, HIPAA, etc.) to `pending_research`.
+
+### Block 5 — External Integrations
+Ask:
+1. "List external APIs or services the product must integrate with." (open text — e.g., Stripe, AWS S3, Google OAuth)
+2. "Are there legacy systems or internal APIs that must be connected?" — options: Yes / No
+3. "What authentication providers are required?" — options: Google OAuth / GitHub OAuth / Email+Password only / Enterprise SSO (SAML) / Multiple
+
+Store in `context_packet.integrations`. Add all named services/APIs to `pending_research`.
+
+### Block 6 — Infrastructure Constraints
+Ask:
+1. "Do you have a preferred cloud provider?" — options: AWS / GCP / Azure / No preference (AI will choose) / On-premise required
+2. "What is the target availability SLA?" — options: 99.0% (dev-friendly) / 99.5% (standard) / 99.9% (high availability) / 99.99% (mission critical)
+3. "Are there data residency or geographic restrictions?" — options: Yes (specify in notes) / No
+4. "What is the infrastructure budget tier?" — options: Minimal (<$500/mo) / Startup ($500–5k/mo) / Growth ($5k–50k/mo) / Enterprise (50k+/mo)
+
+Store in `context_packet.infrastructure`.
+
+### Block 7 — Stack Preference
+Ask:
+1. "Development will be AI-assisted. Should the stack be chosen by the AI based on product fit (recommended), or do you have specific technology preferences?" — options: AI chooses best fit (Recommended) / I have preferences (specify below)
+2. If "I have preferences": "List your technology preferences or constraints." (open text)
+3. "What is the team size for development?" — options: Solo / 2–5 / 5–15 / 15+
+4. "Target initial deployment timeline?" — options: <4 weeks (MVP fast) / 1–3 months / 3–6 months / 6+ months
+
+Store in `context_packet.stack`.
+
+Mark task "Interrogation" as completed.
+
+---
+
+## PHASE 2 — Official Research & Validation
+
+Mark task "Research & Validation" as in_progress.
+
+For each item in `pending_research`, dispatch an `official-researcher` agent via the Agent tool. Dispatch ALL items **in parallel** (multiple Agent calls in a single message).
+
+Pass to each agent:
+```json
+{
+  "topic": "<technology or regulation name>",
+  "context": "<brief on how it's used in this product>",
+  "search_goals": ["<what we need to know>"]
+}
+```
+
+Collect all results into `context_packet.research_refs` as:
+```json
+[{
+  "ref_id": "ref-001",
+  "topic": "<topic>",
+  "findings": "<summary>",
+  "sources": [{"url": "...", "title": "...", "domain": "...", "retrieved": "..."}]
+}]
+```
+
+### Research Validation Loop
+
+After all researcher agents complete, dispatch ONE `research-validator` agent per batch via the Agent tool.
+
+**CRITICAL**: Each validator invocation MUST be a fresh Agent call — do not reuse context. Pass only the research refs as input.
+
+If the validator returns `approved: false`:
+- Read its `issues` and `requery_guidance`
+- Re-dispatch the specific `official-researcher` agents for flagged refs
+- Re-validate (max 3 total iterations per ref)
+- If still failing after 3 attempts: mark ref as `partially_validated` and log issues for user
+
+Mark task "Research & Validation" as completed.
+
+---
+
+## PHASE 3 — Requirements Analysis
+
+Mark task "Requirements Analysis" as in_progress.
+
+Dispatch `requirements-analyst` agent via Agent tool with:
+```json
+{
+  "context_packet": <full context_packet>,
+  "validated_research": <context_packet.research_refs>
+}
+```
+
+The agent returns structured requirements. Store in `context_packet.requirements`.
+
+Mark task "Requirements Analysis" as completed.
+
+---
+
+## PHASE 4 — Architecture Design
+
+Mark task "Architecture Design" as in_progress.
+
+Dispatch `architecture-designer` agent via Agent tool with:
+```json
+{
+  "context_packet": <full context_packet>,
+  "requirements": <context_packet.requirements>
+}
+```
+
+The agent returns a proposed architecture. Present it to the user:
+
+```
+Here is the proposed architecture for [product name]:
+
+**Stack:**
+[table from agent output]
+
+**System Architecture:**
+[diagram from agent output]
+
+**Key Architectural Decisions:**
+[ADRs from agent output]
+```
+
+Ask user for approval via AskUserQuestion:
+- "Does this architecture meet your requirements?"
+- Options: Approved / Needs adjustments (specify)
+
+If adjustments needed: incorporate feedback into `context_packet.stack.adjustments` and re-dispatch `architecture-designer`.
+
+Store final architecture in `context_packet.architecture`.
+
+Mark task "Architecture Design" as completed.
+
+---
+
+## PHASE 5 — Document Generation (parallel)
+
+Mark task "Document Generation" as in_progress.
+
+Verify the current directory is inside a git repository. If not, ask:
+- "This project will generate files inside the current directory. Is this the correct project root?"
+- If no: ask for correct path and cd there.
+
+Dispatch the following agents **in parallel** (all three in one message):
+
+1. `prd-writer` with `{ context_packet: <full>, include_er: <bool from arch> }`
+2. `stack-guide-generator` with `{ architecture: <context_packet.architecture>, product_name: <name>, domain: <domain> }`
+3. `skills-generator` with `{ context_packet: <full>, prd_version: "1.0" }`
+
+Wait for all three to complete.
+
+Mark task "Document Generation" as completed.
+
+---
+
+## PHASE 6 — Skills & Guides Written
+
+Mark task "Skills & Guides Generation" as in_progress.
+
+Verify all expected files exist:
+- `docs/prd/PRD.md`
+- `docs/prd/ARCHITECTURE.md`
+- `docs/prd/ER.md` (if applicable)
+- `CLAUDE.md`
+- `backend/CLAUDE.md`
+- `frontend/CLAUDE.md` (if applicable)
+- `infrastructure/CLAUDE.md`
+- `.claude/skills/project-guardian/SKILL.md`
+- `.claude/skills/project-architecture/SKILL.md`
+- `.claude/skills/project-domain-rules/SKILL.md`
+- `.claude/skills/project-compliance/SKILL.md`
+
+Report any missing files and attempt regeneration via targeted agent dispatch.
+
+Mark task "Skills & Guides Generation" as completed.
+
+---
+
+## PHASE 7 — Commit
+
+Mark task "Commit" as in_progress.
+
+Run:
+```bash
+git add docs/prd/ CLAUDE.md backend/ frontend/ infrastructure/ .claude/skills/
+git commit -m "feat(prd): initialize product requirements for <product_name>
+
+Generated by prd-generator-plugin v1.0.0
+- PRD v1.0 with functional and non-functional requirements
+- Architecture design with stack decisions and ADRs
+- $(ls .claude/skills/ | wc -l) project enforcement skills
+- Stack-specific development guides"
+```
+
+Mark task "Commit" as completed.
+
+---
+
+## Completion Summary
+
+Report to the user (in their language):
+1. PRD location: `docs/prd/PRD.md`
+2. Architecture: `docs/prd/ARCHITECTURE.md`
+3. Skills generated: list the 4 skills with one-line descriptions
+4. CLAUDE.md files generated: list all stack guides
+5. Next step: "Run `/prd-evolve` whenever the product scope changes to keep all documents and skills in sync."
