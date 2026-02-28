@@ -5,6 +5,8 @@
   "author": {
     "name": "rodrigo"
   },
+  "homepage": "https://github.com/rodrigo/prd-generator-plugin",
+  "repository": "https://github.com/rodrigo/prd-generator-plugin",
   "license": "MIT",
   "keywords": [
     "prd",

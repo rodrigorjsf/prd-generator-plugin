@@ -30,7 +30,7 @@ claude plugin install prd-generator-plugin
 Or clone and install locally:
 
 ```bash
-git clone https://github.com/your-username/prd-generator-plugin
+git clone https://github.com/rodrigo/prd-generator-plugin
 claude plugin install ./prd-generator-plugin
 ```
 
@@ -329,7 +329,7 @@ The `official-researcher` agent uses `blocked_domains` on every search:
 **Allowed:**
 - Official vendor documentation (`docs.aws.amazon.com`, `nextjs.org/docs`, `docs.stripe.com`, etc.)
 - Standards bodies (`rfc-editor.org`, `owasp.org`, `iso.org`, `pcisecuritystandards.org`)
-- Government/regulatory portals (`lgpd.gov.br`, `ec.europa.eu`, `gdpr.eu`)
+- Government/regulatory portals (`gov.br/anpd`, `planalto.gov.br`, `bcb.gov.br`, `ec.europa.eu`, `gdpr.eu`)
 - Official language/framework sites (`nodejs.org`, `python.org`, `go.dev`, `rust-lang.org`)
 
 ---
