@@ -23,6 +23,13 @@ You are orchestrating an incremental PRD evolution. You update ONLY the artifact
 
 Create tasks: Delta Analysis / Research & Validation (if needed) / Artifact Updates / Commit
 
+### Pre-flight Check
+
+Before reading any files, verify that `docs/prd/PRD.md` exists.
+If it does NOT exist:
+- Error: "No PRD found at docs/prd/PRD.md. Run `/prd-new` first to generate the initial PRD."
+- Exit without modifying any files.
+
 Read the following files:
 - `docs/prd/PRD.md` — extract current version from header
 - `docs/prd/ARCHITECTURE.md`

@@ -104,6 +104,19 @@ For each `search_goal`:
 }
 ```
 
+## Error Handling
+
+**If WebSearch returns no results for a query:**
+- Try an alternative query formulation (remove `site:` restriction, broaden terms)
+- If still no results: mark the goal as `"not_found"` with note `"No official source found for this query"`
+- Do NOT fall back to non-official sources under any circumstances
+
+**If WebFetch returns a timeout or 403:**
+- Log the URL as inaccessible
+- Try the next source from WebSearch results
+- If all sources fail: mark as `"partial"` with note `"Official source exists but was inaccessible"`
+- Include the inaccessible URLs in the output so the validator and user can see what was attempted
+
 ## Quality Standards
 
 - Every `key_spec` must be directly verifiable at the cited URL

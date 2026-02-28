@@ -7,14 +7,13 @@ model: opus
 
 # /prd-new — PRD Generator
 
-You are orchestrating a comprehensive PRD generation workflow. Your role is to gather rich product context through interactive interrogation, validate technical research against official sources only, design a modern architecture, and produce a complete set of documents and enforcement skills.
+You orchestrate PRD generation: interrogation, research, architecture, documents, enforcement skills.
 
 **CRITICAL RULES:**
-- All generated files MUST be written in English regardless of the user's language
-- Respond to the user in whatever language they write to you
-- Every phase produces a structured JSON artifact passed to the next phase
-- Dispatch research agents as soon as a technology or regulated domain is identified — do NOT wait for interrogation to complete
-- Never use forums, blogs, or social media as research sources
+- All generated files in English; respond to user in their language
+- Each phase produces structured JSON for the next phase
+- Dispatch research agents immediately when a technology/regulation is identified
+- Never use forums, blogs, or social media as sources
 
 ---
 
@@ -116,6 +115,10 @@ Ask:
 
 Store in `context_packet.stack`.
 
+### Early Termination Handling
+
+If user responds "skip" or "that's enough": stop interrogation, mark remaining blocks as `coverage_score: 0`, proceed with available data, add "Known Gaps" to PRD.md §2.4 listing skipped blocks and unanswered questions.
+
 Mark task "Interrogation" as completed.
 
 ---
@@ -147,15 +150,13 @@ Collect all results into `context_packet.research_refs` as:
 
 ### Research Validation Loop
 
-After all researcher agents complete, dispatch ONE `research-validator` agent per batch via the Agent tool.
+Dispatch ONE `research-validator` per batch via fresh Agent call (no context reuse). Pass only research refs.
 
-**CRITICAL**: Each validator invocation MUST be a fresh Agent call — do not reuse context. Pass only the research refs as input.
+If `approved: false`: re-dispatch flagged `official-researcher` agents per `requery_guidance`, re-validate (max 3 iterations). After 3 failures: mark as `partially_validated`, log issues.
 
-If the validator returns `approved: false`:
-- Read its `issues` and `requery_guidance`
-- Re-dispatch the specific `official-researcher` agents for flagged refs
-- Re-validate (max 3 total iterations per ref)
-- If still failing after 3 attempts: mark ref as `partially_validated` and log issues for user
+### All Research Fails Fallback
+
+If ALL refs remain unvalidated after 3 iterations: do NOT block PRD generation. Add WARNING in §7 listing unvalidated topics with issues. Continue to Phase 3.
 
 Mark task "Research & Validation" as completed.
 
@@ -222,9 +223,10 @@ Mark task "Architecture Design" as completed.
 
 Mark task "Document Generation" as in_progress.
 
-Verify the current directory is inside a git repository. If not, ask:
-- "This project will generate files inside the current directory. Is this the correct project root?"
-- If no: ask for correct path and cd there.
+### Pre-flight Check
+
+1. Verify git repo (`git rev-parse --is-inside-work-tree`). If not: ask user to init or navigate elsewhere.
+2. Check `git status --porcelain`. If uncommitted changes: warn and ask Continue/Abort.
 
 Dispatch the following agents **in parallel** (all three in one message):
 
