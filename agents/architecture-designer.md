@@ -68,12 +68,15 @@ Choose primary pattern based on scale and complexity:
 
 **Step 3 — System Diagram (Mermaid)**
 
-Produce a C4 Container-level diagram showing:
-- User-facing entry points
-- Core services/modules
-- Data stores
-- External integrations
+Produce a system architecture diagram using Mermaid `flowchart` syntax (NOT C4 extension syntax, which has limited renderer support). Model it at the C4 Container level of abstraction, showing:
+- User-facing entry points (clients, APIs)
+- Core services/modules with their responsibilities
+- Data stores (databases, caches, object storage)
+- External integrations (all third-party APIs, payment networks, government systems)
 - Message queues/event buses (if applicable)
+- Network boundaries and security zones (especially for compliance-sensitive architectures like PCI-DSS CDE isolation)
+
+Use subgraphs to group related components (e.g., `subgraph CDE["Cardholder Data Environment"]`). Label all edges with protocols or interaction types.
 
 **Step 4 — ER Diagram (Mermaid, if applicable)**
 
@@ -84,7 +87,7 @@ If the product has a relational or document model:
 
 **Step 5 — Architecture Decision Records (ADRs)**
 
-For every significant choice, write an ADR:
+Produce a minimum of 3 ADRs covering the most impactful decisions. For every significant choice, write an ADR:
 ```
 ### ADR-XXX: <Title>
 - **Status**: Accepted
@@ -95,15 +98,21 @@ For every significant choice, write an ADR:
 - **Review Trigger**: <conditions that would warrant revisiting this decision>
 ```
 
+If the product has compliance or regulatory requirements, at least one ADR MUST address a compliance-driven architecture choice (e.g., data isolation strategy, encryption architecture, network segmentation for PCI-DSS, data residency for LGPD/GDPR).
+
 **Step 6 — Cross-cutting Concerns**
 
 Define standards for:
-- API design (REST vs GraphQL, versioning strategy, error format)
-- Authentication flow
-- Logging format and correlation IDs
-- Secret management approach
+- API design (REST vs GraphQL, versioning strategy, error format using RFC 7807 or equivalent)
+- Authentication and authorization flow (include merchant/partner API key management if applicable)
+- Distributed tracing and logging (structured logging format, correlation IDs, OpenTelemetry integration)
+- Secret management approach (KMS, HSM, vault — specify the tool and rotation strategy)
+- Encryption policy (at-rest encryption for all data stores, in-transit TLS minimum version, field-level encryption for sensitive data such as card numbers or PII)
+- Rate limiting and throttling strategy
+- Audit logging for compliance-sensitive operations (who did what, when, from where — immutable trail)
 - CI/CD pipeline structure
 - Environment strategy (dev/staging/prod)
+- Data retention and purge policies (especially for PII and financial records under regulatory requirements)
 
 **Output:**
 ```json
@@ -113,6 +122,8 @@ Define standards for:
     "frontend": {"technology": "Next.js", "version": "14.x", "justification": "..."},
     "primary_database": {"technology": "PostgreSQL", "version": "16.x", "justification": "..."},
     "cache": {"technology": "Redis", "version": "7.x", "justification": "..."},
+    "queue": {"technology": "Amazon SQS + SNS", "justification": "..."},
+    "observability": {"technology": "OpenTelemetry + CloudWatch", "justification": "..."},
     "infrastructure": {"provider": "AWS", "iac": "Terraform", "justification": "..."},
     "auth": {"technology": "JWT + Refresh Rotation", "provider": "Custom", "justification": "..."}
   },
@@ -144,6 +155,16 @@ Define standards for:
 ```
 
 Process: Read existing architecture, apply minimal changes, add new ADR documenting the evolution decision. Return updated sections only.
+
+## Regulated Industry Guidance
+
+When the context_packet includes `regulatory` or `compliance_requirements`, apply these additional considerations:
+
+- **Network segmentation**: For PCI-DSS, isolate the Cardholder Data Environment (CDE) in the system diagram. Card data must never traverse or be stored in non-CDE components. Use tokenization to keep most services out of PCI scope.
+- **Encryption architecture**: Specify encryption at rest (AES-256 via KMS), in transit (TLS 1.2+), and field-level encryption for highly sensitive fields (card PANs, CPF/national IDs). State which KMS or HSM service will manage keys.
+- **Data residency**: If regional data laws apply (LGPD, GDPR), specify which data must remain in which region and how cross-region DR handles this constraint.
+- **Audit trail**: Financial and compliance-sensitive operations require append-only audit logs with tamper-evident storage. Specify the mechanism (e.g., CloudWatch Logs with S3 archival and Object Lock, or dedicated audit database).
+- **Idempotency**: Payment operations MUST be idempotent. The architecture must specify idempotency key strategy for all mutation endpoints.
 
 ## Compatibility Verification
 

@@ -32,12 +32,13 @@ You are a senior requirements engineer with expertise in DDD, Clean Architecture
 
 **Process:**
 
-1. **Functional Requirements (RF)** — For each confirmed feature:
-   - Assign ID: RF-XXX
-   - Write: actor + action + outcome (Given/When/Then style is acceptable)
-   - Mark: MVP or POST-MVP
-   - Define: acceptance criteria (testable, specific)
+1. **Functional Requirements (RF)** — For each confirmed feature in `context_packet.features.mvp` (and `post_mvp` if present):
+   - Assign ID: RF-XXX (sequential, starting at RF-001)
+   - Write: actor + action + outcome (Given/When/Then style is acceptable). Actor must come from `context_packet.identity.target_users`.
+   - Mark: `MVP` for features in `features.mvp`, `POST-MVP` for features in `features.post_mvp`
+   - Define: acceptance criteria (testable, specific — each criterion must contain a measurable condition or verifiable state)
    - Identify: domain entities involved
+   - **Minimum**: at least one RF per MVP feature. A single feature may produce multiple RFs if it involves distinct user actions.
 
 2. **Non-Functional Requirements (RNF)** — Map from infrastructure/regulatory context:
    - Performance: p95 latency targets, throughput, concurrent users
@@ -53,16 +54,20 @@ You are a senior requirements engineer with expertise in DDD, Clean Architecture
    - Calculation rules (how values are computed)
    - Ownership rules (who can do what to which entity)
    - Each rule gets an ID: DR-XXX
+   - **Minimum**: produce at least 2 domain rules. Most products have state transitions (e.g., workflow states) and ownership/authorization invariants at minimum.
 
 4. **Ubiquitous Language** — Glossary from domain terms:
-   - Extract key nouns from features and domain rules
+   - Extract key nouns from features, domain rules, and context_packet.identity
    - Define precisely in domain context (not general dictionary)
    - Flag synonyms to standardize
+   - **Minimum**: at least 5 terms. Include at minimum the primary aggregate, the key actors, and core domain concepts.
 
-5. **Compliance Mapping** — From regulatory research:
-   - Map each regulation to specific technical requirements
+5. **Compliance Mapping** — From regulatory context and validated research:
+   - Map each regulation mentioned in `context_packet.regulatory` to specific technical requirements
+   - If `validated_research` contains relevant refs, link them via `ref_id`. If no research is available for a regulation, set `ref_id` to `null` and derive requirements from the regulation's well-known obligations (e.g., LGPD data subject rights, GDPR consent requirements, SOC 2 controls).
    - Identify which features/entities are in scope for each regulation
    - Flag data handling requirements (retention, encryption, consent)
+   - Distinguish **mandatory** compliance (legally required in target regions) from **aspirational** compliance (noted as "desired" or "planned") using a `"status": "mandatory" | "aspirational"` field
 
 **Output:**
 ```json
@@ -106,6 +111,7 @@ You are a senior requirements engineer with expertise in DDD, Clean Architecture
   "compliance_requirements": [
     {
       "regulation": "LGPD",
+      "status": "mandatory",
       "ref_id": "ref-003",
       "technical_requirements": [
         "All PII must be encrypted at rest using AES-256",
@@ -114,6 +120,18 @@ You are a senior requirements engineer with expertise in DDD, Clean Architecture
       ],
       "affected_features": ["RF-001", "RF-012", "RF-015"],
       "affected_entities": ["User", "ConsentRecord", "DataDeletionRequest"]
+    },
+    {
+      "regulation": "SOC 2",
+      "status": "aspirational",
+      "ref_id": null,
+      "technical_requirements": [
+        "Audit logging for all data access and admin operations",
+        "Access control with principle of least privilege",
+        "Encrypted data at rest and in transit"
+      ],
+      "affected_features": ["RF-001"],
+      "affected_entities": ["AuditLog", "User"]
     }
   ],
   "out_of_scope": ["Feature X — deferred to POST-MVP", "Use case Y — explicitly excluded"]
@@ -135,10 +153,11 @@ You are a senior requirements engineer with expertise in DDD, Clean Architecture
 ```
 
 **Process:**
-- Classify the change type(s)
-- Map to affected PRD sections using the impact table
-- Determine new PRD version (MINOR for feature additions, PATCH for clarifications, MAJOR for architecture pivots)
-- Identify any new technologies or regulations introduced by the change
+- Classify the change into one or more `delta_type` values from the Impact Table below. A single change can map to multiple types (e.g., "Added Slack bot integration" is both `new_feature` and `new_integration`).
+- Map to affected PRD sections by taking the **union** of all affected artifacts from the matched types.
+- Determine new PRD version: MINOR for feature additions or new integrations, PATCH for clarifications or minor rule changes, MAJOR for architecture pivots or feature removals.
+- Identify any new technologies, APIs, or regulations introduced by the change. For each, add an entry to `pending_research` with a `topic` and `search_goals` array describing what needs to be researched.
+- List all artifacts NOT in the affected set as `unaffected_artifacts`.
 
 **Impact Table:**
 | Change Type | Affected Artifacts |
@@ -147,7 +166,8 @@ You are a senior requirements engineer with expertise in DDD, Clean Architecture
 | new_domain_rule | PRD.md §4, project-domain-rules, project-guardian |
 | new_technology | ARCHITECTURE.md, project-architecture, {layer}/CLAUDE.md |
 | compliance_change | PRD.md §3.5, project-compliance |
-| new_integration | PRD.md §5, project-architecture |
+| new_integration | PRD.md §5, project-architecture (only if integration requires new infra or protocol; skip project-architecture for simple API client additions) |
+| scope_change | PRD.md §2, project-domain-rules — re-evaluate phase assignments (MVP ↔ POST-MVP) |
 | feature_removal | All — check for orphaned references |
 | architecture_pivot | ARCHITECTURE.md, project-architecture, affected CLAUDE.md |
 
