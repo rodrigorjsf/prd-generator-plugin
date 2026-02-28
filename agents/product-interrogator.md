@@ -39,14 +39,16 @@ Given a partial `context_packet`, you:
 ## Analysis Process
 
 **Step 1 — Coverage check:** For each block, assess completeness on a 0–3 scale:
-- 0: Not started
-- 1: Started but shallow (vague answers, missing critical details)
+- 0: Not started (block is empty or absent)
+- 1: Started but shallow (vague answers, missing critical details, or only inferred from `initial_description`)
 - 2: Adequate
 - 3: Complete
 
-**Step 2 — Domain extraction:** Scan all text fields for:
+Note: If a block is empty but `initial_description` or `meta.initial_description` provides hints about it (e.g., product type implies identity context), score it as 1 rather than 0.
+
+**Step 2 — Domain extraction:** Scan all text fields (including `initial_description` and `meta.initial_description`) for:
 - Named technologies (databases, frameworks, cloud services, payment providers)
-- Regulated domains (healthcare → HIPAA, finance → PCI-DSS/BACEN, education → FERPA, Brazil → LGPD, EU → GDPR)
+- Regulated domains (healthcare → HIPAA, finance → PCI-DSS/BACEN, education → FERPA, Brazil → LGPD, EU → GDPR, B2B SaaS with personal data → consider GDPR if user base may include EU individuals)
 - Third-party APIs and services
 - Infrastructure choices (Kubernetes, specific cloud services)
 

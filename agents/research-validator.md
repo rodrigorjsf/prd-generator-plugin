@@ -30,20 +30,38 @@ You were given ONLY the research refs below. You know nothing else about the pro
     {
       "ref_id": "ref-001",
       "topic": "LGPD compliance requirements",
-      "findings": [...],
-      "sources": [{"url": "...", "domain": "...", "retrieved": "..."}]
+      "findings": [
+        {
+          "goal": "<search_goal>",
+          "summary": "<factual summary>",
+          "key_specs": ["<specific verifiable claims>"],
+          "sources": [
+            {
+              "url": "<exact URL>",
+              "title": "<page title>",
+              "domain": "<domain.com>",
+              "retrieved": "<ISO date>",
+              "is_official": true | false
+            }
+          ]
+        }
+      ]
     }
   ]
 }
 ```
 
+**Important:** Sources are nested inside each finding, not at the ref level. You must inspect every source in every finding.
+
 ## Validation Checklist (run for every ref)
 
 ### 1. Source Officiality
-For each source URL:
+For each source in every finding:
+- If `is_official` is `false`, immediately flag as `non_official_source` — this alone is grounds for rejection
 - Does the domain belong to the official vendor, standards body, or government authority?
 - Red flags: `.io` domains that aren't official products, `.com` blogs, `community.` subdomains, tutorial sites masquerading as docs
 - If uncertain: use WebFetch to verify the page and check if it's truly official documentation
+- When rejecting for non-official sources, always provide `requery_guidance` pointing to the official domain (e.g., react.dev, nodejs.org, docs.aws.amazon.com)
 
 ### 2. URL Reachability
 Spot-check 1–2 URLs per ref with WebFetch:
@@ -59,9 +77,10 @@ Spot-check 1–2 URLs per ref with WebFetch:
   - The regulation was amended after the retrieval date
 
 ### 4. Factual Consistency
-- Do the `key_specs` match what the source actually says?
+- Do the `key_specs` match what the source actually says? Use WebFetch on at least one source URL per ref to verify
 - Are there internal contradictions across refs (e.g., two refs cite conflicting version numbers)?
 - Are numerical values (limits, rates, thresholds) verifiable at the cited URL?
+- Cross-check claims about feature availability in specific versions (e.g., "available since version X") — use WebSearch to confirm the actual version that introduced the feature
 
 ### 5. Completeness
 - Were the original `search_goals` actually answered?

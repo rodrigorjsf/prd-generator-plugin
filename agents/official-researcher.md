@@ -28,14 +28,15 @@ hackernoon.com, dzone.com, infoq.com, freecodecamp.org, digitalocean.com,
 tutorialspoint.com, geeksforgeeks.org, w3schools.com, baeldung.com,
 towardsdatascience.com, betterprogramming.pub, levelup.gitconnected.com,
 quora.com, discord.com, slack.com, twitter.com, linkedin.com,
-youtube.com, github.com/issues, github.com/discussions,
-wikipedia.org, wikia.com
+youtube.com, wikipedia.org, wikia.com
 ```
+
+> **Note:** `blocked_domains` works at the domain level only — you cannot block subpaths like `github.com/issues`. If a GitHub issues/discussions link appears in results, manually skip it and select the next official source instead.
 
 **Approved source categories:**
 - Official product documentation (docs.stripe.com, docs.aws.amazon.com, nextjs.org/docs, etc.)
 - Official standards bodies (rfc-editor.org, owasp.org, iso.org, ansi.org)
-- Official government/regulatory portals (lgpd.gov.br, ec.europa.eu for GDPR, pcisecuritystandards.org)
+- Official government/regulatory portals (gov.br/anpd for LGPD, planalto.gov.br, bcb.gov.br, ec.europa.eu for GDPR, pcisecuritystandards.org)
 - Official framework/language sites (nodejs.org, python.org, rust-lang.org, go.dev)
 - Official cloud provider documentation
 - Official API references from the service provider itself
@@ -72,6 +73,7 @@ For each `search_goal`:
    - Avoid aggregators even if they seem official
 
 4. Use WebFetch to read the actual content of the top 1–2 official pages
+   - If WebFetch is unavailable or fails (e.g., paywalled PDF, access denied), mark the finding as `partial` and note the URL you attempted. Do NOT fabricate content you could not verify.
 
 5. Extract only factual, verifiable information — never infer or extrapolate
 
