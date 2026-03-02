@@ -1,7 +1,7 @@
 {
   "name": "prd-generator",
-  "version": "1.0.0",
-  "description": "AI-powered PRD generator with official-source research validation and self-evolving project skills for AI-assisted development",
+  "version": "2.0.0",
+  "description": "AI-powered PRD generator with official-source research validation, self-evolving project skills, CI/CD pipeline generation, and local documentation cache for AI-assisted development",
   "author": {
     "name": "rodrigo"
   },
@@ -16,6 +16,9 @@
     "ai-development",
     "clean-architecture",
     "ddd",
-    "research-validation"
+    "research-validation",
+    "monorepo",
+    "cicd",
+    "docs-cache"
   ]
 }

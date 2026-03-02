@@ -1,6 +1,6 @@
 # prd-generator-plugin
 
-> An AI-powered Claude Code plugin that transforms a product idea into a complete, research-backed PRD with modern architecture design, enforcement skills, and self-evolving project documentation — ready for AI-assisted development.
+> An AI-powered Claude Code plugin that transforms a product idea into a complete, research-backed PRD with modern architecture design, enforcement skills, CI/CD pipeline, documentation cache infrastructure, and self-evolving project documentation — ready for AI-assisted development.
 
 ---
 
@@ -8,14 +8,15 @@
 
 Given a product idea, this plugin:
 
-1. **Interrogates** — conducts a structured, interactive interview covering business model, features, compliance, integrations, and infrastructure
+1. **Interrogates** — conducts a structured, one-question-at-a-time interview covering business model, features, compliance, integrations, infrastructure, and VCS choice
 2. **Researches** — automatically searches official documentation sources (never forums or blogs) for every technology and regulatory domain identified
 3. **Validates** — audits research in a fresh, unbiased context to eliminate hallucinations and stale information
-4. **Designs** — proposes a modern, compatible technology stack tailored to the product (not just what you know)
+4. **Designs** — proposes a modern, compatible technology stack tailored to the product (not just what you know), structured as a monorepo
 5. **Documents** — generates a complete PRD, architecture document, and ER diagram
-6. **Enforces** — creates four project-specific Claude skills that prevent AI coding agents from violating your product decisions during development
-7. **Guides** — produces CLAUDE.md files for each stack layer with best practices from Clean Code, Clean Architecture, DDD, and The Pragmatic Programmer
-8. **Evolves** — updates all documents and skills atomically when the product scope changes
+6. **Enforces** — creates six project-specific Claude skills that prevent AI coding agents from violating your product decisions during development
+7. **Guides** — produces CLAUDE.md files for each stack layer with best practices from Clean Code, Clean Architecture, DDD, and The Pragmatic Programmer; includes local documentation cache policy
+8. **Pipelines** — generates a lean CI/CD pipeline for your VCS (GitHub/GitLab/Bitbucket) with path-filtering per monorepo service
+9. **Evolves** — updates all documents, skills, and CI/CD pipeline atomically when the product scope changes
 
 ---
 
@@ -68,7 +69,7 @@ flowchart TD
         C --> D["Block 3: Core Features\nMVP list, real-time, mobile"]
         D --> E["Block 4: Regulatory\nGDPR/LGPD, payments, sector"]
         E --> F["Block 5: Integrations\nexternal APIs, auth providers"]
-        F --> G["Block 6: Infrastructure\ncloud, SLA, budget, geo"]
+        F --> G["Block 6: Infrastructure\ncloud, SLA, budget, geo, VCS, branch strategy"]
         G --> H["Block 7: Stack Preference\nAI-suggested or user-defined"]
     end
 
@@ -93,8 +94,9 @@ flowchart TD
 
     subgraph PHASE5["Phase 5 — Generation (parallel)"]
         O["prd-writer\nPRD.md\nARCHITECTURE.md\nER.md"]
-        P["stack-guide-generator\nbackend/CLAUDE.md\nfrontend/CLAUDE.md\ninfrastructure/CLAUDE.md"]
-        Q["skills-generator\nproject-guardian\nproject-architecture\nproject-domain-rules\nproject-compliance"]
+        P["stack-guide-generator\nbackend/CLAUDE.md\nfrontend/CLAUDE.md\ninfrastructure/CLAUDE.md\ndocs/stack/ + .claude/settings.json"]
+        Q["skills-generator\nproject-guardian\nproject-architecture\nproject-domain-rules\nproject-compliance\nproject-docs-stack\nproject-cicd"]
+        R2["cicd-generator\n.github/workflows/ci.yml\n(or .gitlab-ci.yml\nor bitbucket-pipelines.yml)"]
     end
 
     R[("git commit\nall artifacts")]
@@ -103,8 +105,8 @@ flowchart TD
     K -->|yes| L
     H --> L
     L --> M
-    N -->|approved| O & P & Q
-    O & P & Q --> R
+    N -->|approved| O & P & Q & R2
+    O & P & Q & R2 --> R
 ```
 
 ---
@@ -150,7 +152,8 @@ flowchart TD
 |---|---|
 | New feature | PRD.md §2, project-domain-rules |
 | New domain rule | PRD.md §4, project-domain-rules, project-guardian |
-| New technology | ARCHITECTURE.md, project-architecture, `{layer}/CLAUDE.md` |
+| New technology | ARCHITECTURE.md, project-architecture, `{layer}/CLAUDE.md`, CI/CD pipeline, project-cicd |
+| Architecture pivot | ARCHITECTURE.md, project-architecture, CI/CD pipeline, project-cicd |
 | Compliance change | PRD.md §3.5, project-compliance |
 | New integration | PRD.md §5, project-architecture |
 | Feature removed | All — orphaned references cleared |
@@ -249,8 +252,9 @@ stateDiagram-v2
 | `requirements-analyst` | Structures RF/RNF/domain rules/compliance from raw context | sonnet |
 | `architecture-designer` | Proposes modern stack + Mermaid diagrams + ADRs | opus |
 | `prd-writer` | Writes PRD.md, ARCHITECTURE.md, ER.md | sonnet |
-| `stack-guide-generator` | Generates CLAUDE.md per stack layer with literature best practices | sonnet |
-| `skills-generator` | Generates 4 project enforcement skills | sonnet |
+| `stack-guide-generator` | Generates CLAUDE.md per stack layer; also generates `docs/stack/` and `.claude/settings.json` | sonnet |
+| `skills-generator` | Generates 6 project enforcement skills | sonnet |
+| `cicd-generator` | Generates lean CI/CD pipeline for GitHub/GitLab/Bitbucket with monorepo path-filtering | sonnet |
 
 ### Skills (shipped with plugin)
 
@@ -271,7 +275,7 @@ flowchart LR
     C["Features\nMVP list · real-time · mobile"] -->
     D["Regulatory\nGDPR · LGPD · PCI · sector"] -->
     E["Integrations\nAPIs · auth · legacy systems"] -->
-    F["Infrastructure\ncloud · SLA · budget · geo"] -->
+    F["Infrastructure\ncloud · SLA · budget · geo · VCS · branch strategy"] -->
     G["Stack\nAI-suggested or user preferences"]
 ```
 
@@ -331,6 +335,66 @@ The `official-researcher` agent uses `blocked_domains` on every search:
 - Standards bodies (`rfc-editor.org`, `owasp.org`, `iso.org`, `pcisecuritystandards.org`)
 - Government/regulatory portals (`gov.br/anpd`, `planalto.gov.br`, `bcb.gov.br`, `ec.europa.eu`, `gdpr.eu`)
 - Official language/framework sites (`nodejs.org`, `python.org`, `go.dev`, `rust-lang.org`)
+
+---
+
+## Monorepo Structure (Mandatory)
+
+All projects generated by prd-generator-plugin are **monorepos**. This is a plugin-level decision, not configurable. Services are top-level directories:
+
+```
+/project-root
+├── backend/        ← API service
+├── frontend/       ← Web/mobile app (if applicable)
+├── infrastructure/ ← IaC
+├── docs/
+│   ├── prd/        ← Generated PRD, ARCHITECTURE, ER docs
+│   └── stack/      ← Local documentation cache
+└── .claude/
+    ├── skills/     ← 6 project enforcement skills
+    └── settings.json ← Claude Code hooks (PreToolUse for docs-stack)
+```
+
+The `project-guardian` skill enforces this as a Hard Block: creating a service in a separate repository is always blocked.
+
+---
+
+## Local Documentation Cache (`docs/stack/`)
+
+Claude checks `docs/stack/` before any web search. The `project-docs-stack` skill enforces this protocol and a `PreToolUse` hook in `.claude/settings.json` reminds Claude before every `WebFetch`/`WebSearch`:
+
+1. Before fetching: check `docs/stack/` index
+2. If not found locally: fetch externally, then save to `docs/stack/`
+3. If found but incomplete: fetch missing sections, update the local doc
+
+This prevents repeated web searches across sessions for the same technologies.
+
+---
+
+## Generated Skills (v2.0 — 6 total)
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `project-guardian` | Before any implementation | PRD compliance, monorepo rule enforcement |
+| `project-architecture` | When writing/reviewing code | Stack canonical reference, ADR enforcement |
+| `project-domain-rules` | When implementing business logic | Domain invariants, ubiquitous language |
+| `project-compliance` | When handling regulated data | Compliance checklist per regulation |
+| `project-docs-stack` | Before any web search | Local-first docs cache, prevents redundant searches |
+| `project-cicd` | On stack changes | Pipeline consistency, evolution triggers |
+
+---
+
+## CI/CD Pipeline Generation
+
+During `/prd-new`, Claude asks for your VCS and branch strategy (Block 6), then generates a lean pipeline:
+
+| VCS | Output File | Path Filtering |
+|-----|-------------|----------------|
+| GitHub | `.github/workflows/ci.yml` | `dorny/paths-filter` action |
+| GitLab | `.gitlab-ci.yml` | Native `rules:changes` |
+| Bitbucket | `bitbucket-pipelines.yml` | Native `condition.changesets` |
+
+Each service in the monorepo gets its own job, triggered only when its directory has changes. The `project-cicd` skill tracks consistency and `/prd-evolve` re-generates the pipeline when the stack changes.
 
 ---
 

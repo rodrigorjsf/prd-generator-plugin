@@ -141,7 +141,7 @@ Sensitive data handling.
 | Frontend | Component design (server vs client), state management, type-safe API clients, form validation, WCAG 2.1 AA, bundle optimization, env vars |
 | Infrastructure | IaC module design, environment promotion, secrets, tagging/naming, cost allocation tags, least-privilege IAM, backup/DR |
 | Database (in Backend guide) | Migration naming, schema standards, repository-only queries, connection pooling, seed data conventions |
-| Root CLAUDE.md | References all guides, product name + PRD version, top 5 cross-cutting rules, ubiquitous language ref, architecture pattern, pre-PR checklist |
+| Root CLAUDE.md | References all guides, product name + PRD version, top 5 cross-cutting rules, ubiquitous language ref, architecture pattern, pre-PR checklist, monorepo structure, docs policy (local-first) |
 
 ## Mode: `update`
 
@@ -154,3 +154,102 @@ Sensitive data handling.
 ## Research for Stack-Specific Practices
 
 Before generating, check official sources (docs, style guides) for version-specific best practices. Use WebSearch with blocked non-official domains.
+
+---
+
+## Additional Artifacts
+
+After generating all CLAUDE.md files, also generate the following artifacts:
+
+### 1. Root CLAUDE.md — Mandatory Sections
+
+In addition to the standard sections, the root `CLAUDE.md` MUST include:
+
+**Monorepo Structure section:**
+```markdown
+## Repository Structure — Monorepo (Mandatory)
+
+This project is a **monorepo**. All services live in a single repository.
+
+### Directory Layout
+```
+/                          ← repository root
+├── backend/               ← backend service (API)
+│   ├── CLAUDE.md
+│   └── src/
+├── frontend/              ← frontend service (if applicable)
+│   ├── CLAUDE.md
+│   └── src/
+├── infrastructure/        ← IaC (Terraform, CDK, etc.)
+│   └── CLAUDE.md
+├── docs/
+│   ├── prd/               ← Generated PRD, ARCHITECTURE, ER docs
+│   └── stack/             ← Local documentation cache
+└── .claude/
+    ├── skills/            ← Project enforcement skills
+    └── settings.json      ← Claude Code hooks
+```
+
+### Hard Rule
+
+**Never create services in separate repositories.** If a new service is needed, add it as a top-level directory in this monorepo and update the CI/CD pipeline to add a path-filtered job for it.
+```
+
+**Docs Policy section:**
+```markdown
+## Docs Policy — Local Cache First
+
+**Before any web search or documentation fetch:**
+1. Check `docs/stack/` for cached documentation
+2. Use local docs if available — do not search the web for docs already cached
+3. If fetching externally, save the result to `docs/stack/` afterward
+
+See `.claude/skills/project-docs-stack/SKILL.md` for full protocol.
+See `docs/stack/README.md` for the index of what is already cached.
+```
+
+### 2. `docs/stack/README.md` (documentation cache index)
+
+Create file at `docs/stack/README.md`:
+```markdown
+# Documentation Stack — {Product Name}
+
+This directory caches technical and business documentation fetched during development.
+Claude checks here before any web search. See `.claude/skills/project-docs-stack/SKILL.md` for protocol.
+
+## Index
+
+| File | Technology | Topic | Version | Date |
+|------|------------|-------|---------|------|
+| _(populated automatically as docs are cached)_ | | | | |
+
+## Convention
+
+Files named as: `{technology}-{topic}.md`
+Examples: `nextjs-app-router.md`, `postgresql-partitioning.md`, `stripe-webhooks.md`
+```
+
+Create directory: `mkdir -p docs/stack`
+
+### 3. `.claude/settings.json` (PreToolUse hook for local-first docs)
+
+Create or merge file at `.claude/settings.json`:
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "WebFetch|WebSearch|mcp__context7__query-docs",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'DOCS-STACK CHECK: Before fetching externally, verify docs/stack/ does not already contain this documentation. If found locally, use it. If fetching, save to docs/stack/ after. See .claude/skills/project-docs-stack/SKILL.md.' >&2"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Important**: If `.claude/settings.json` already exists, MERGE the `PreToolUse` array — do not overwrite existing hooks.

@@ -38,6 +38,8 @@ Read the following files:
 - `.claude/skills/project-architecture/SKILL.md`
 - `.claude/skills/project-domain-rules/SKILL.md`
 - `.claude/skills/project-compliance/SKILL.md`
+- `.claude/skills/project-cicd/SKILL.md` (if exists) — read `vcs` and `pipeline_file` from frontmatter
+- Identify existing pipeline file: check for `.github/workflows/ci.yml`, `.gitlab-ci.yml`, `bitbucket-pipelines.yml`
 
 Check for stale skills: if any skill's `prd_version` < PRD's current version, warn the user that skills were already out of sync before this evolution.
 
@@ -60,7 +62,7 @@ Dispatch `requirements-analyst` agent with:
 The agent returns:
 ```json
 {
-  "delta_type": ["new_feature" | "removed_feature" | "new_tech" | "compliance_change" | "architecture_change" | "integration_change"],
+  "delta_type": ["new_feature" | "removed_feature" | "new_tech" | "new_technology" | "compliance_change" | "architecture_change" | "architecture_pivot" | "integration_change"],
   "new_prd_version": "X.Y",
   "affected_artifacts": ["PRD.md §2", "project-domain-rules", ...],
   "pending_research": ["<new tech or regulation>"],
@@ -132,6 +134,25 @@ Dispatch `stack-guide-generator` with:
 }
 ```
 
+**If delta_type includes `new_tech`, `new_technology`, `architecture_change`, or `architecture_pivot`:**
+Dispatch `cicd-generator` with:
+```json
+{
+  "mode": "update",
+  "context_packet": {
+    "identity": "<from PRD.md header>",
+    "infrastructure": {
+      "vcs": "<from project-cicd SKILL.md frontmatter vcs field>",
+      "branch_strategy": "<from project-cicd SKILL.md frontmatter or ARCHITECTURE.md>"
+    },
+    "repo_structure": "monorepo"
+  },
+  "architecture": "<updated architecture from architecture-designer output if dispatched, otherwise current ARCHITECTURE.md>",
+  "changed_services": "<services affected by the change>",
+  "change_description": "$1"
+}
+```
+
 **Always — update affected skills:**
 Dispatch `skills-generator` with:
 ```json
@@ -154,7 +175,8 @@ Mark task "Commit" as in_progress.
 
 Stage only the modified files and commit:
 ```bash
-git add docs/prd/ CLAUDE.md backend/ frontend/ infrastructure/ .claude/skills/
+git add docs/prd/ docs/stack/ CLAUDE.md backend/ frontend/ infrastructure/ .claude/skills/ .claude/settings.json
+git add .github/ 2>/dev/null; git add .gitlab-ci.yml 2>/dev/null; git add bitbucket-pipelines.yml 2>/dev/null; true
 git commit -m "feat(prd): evolve to v<new_version> — $1
 
 Updated artifacts: <comma-separated list of affected_artifacts>
@@ -169,6 +191,6 @@ Mark task "Commit" as completed.
 
 Report to user (in their language):
 1. PRD updated to version `<new_version>`
-2. Artifacts updated: list with brief reason each was updated
+2. Artifacts updated: list with brief reason each was updated (include CI/CD pipeline file if updated)
 3. Artifacts untouched: list (so user knows what was preserved)
 4. If any research was `partially_validated`: show the specific issues flagged
