@@ -256,7 +256,14 @@ Dispatch the following agents **in parallel** (all four in one message):
 3. `skills-generator` with `{ context_packet: <full>, prd_version: "1.0" }`
 4. `cicd-generator` with `{ mode: "full", context_packet: <full>, architecture: <context_packet.architecture> }`
 
-Wait for all three to complete.
+Wait for all four to complete.
+
+**Sequential step — Apply project-docs skill CREATE mode:**
+The project-docs skill at `.claude/skills/project-docs/SKILL.md` has just been created.
+Execute its CREATE mode now (docs/index.md does not yet exist):
+1. Read `docs/prd/PRD.md`, `docs/prd/ARCHITECTURE.md`, and the source file tree
+2. Generate `docs/index.md` and all 6 standard sub-files (business, architecture, structure, development, tech-stack, local-setup)
+Follow the skill instructions at `.claude/skills/project-docs/SKILL.md` exactly.
 
 Mark task "Document Generation" as completed.
 
@@ -280,7 +287,15 @@ Verify all expected files exist:
 - `.claude/skills/project-compliance/SKILL.md`
 - `.claude/skills/project-docs-stack/SKILL.md`
 - `.claude/skills/project-cicd/SKILL.md`
+- `.claude/skills/project-docs/SKILL.md`
 - `docs/stack/README.md`
+- `docs/index.md`
+- `docs/business.md`
+- `docs/architecture.md`
+- `docs/structure.md`
+- `docs/development.md`
+- `docs/tech-stack.md`
+- `docs/local-setup.md`
 - `.claude/settings.json`
 - CI/CD pipeline file (one of: `.github/workflows/ci.yml`, `.gitlab-ci.yml`, `bitbucket-pipelines.yml`)
 
@@ -296,7 +311,7 @@ Mark task "Commit" as in_progress.
 
 Run:
 ```bash
-git add docs/prd/ docs/stack/ CLAUDE.md backend/ frontend/ infrastructure/ .claude/skills/ .claude/settings.json
+git add docs/prd/ docs/stack/ docs/index.md docs/business.md docs/architecture.md docs/structure.md docs/development.md docs/tech-stack.md docs/local-setup.md CLAUDE.md backend/ frontend/ infrastructure/ .claude/skills/ .claude/settings.json
 git add .github/ 2>/dev/null; git add .gitlab-ci.yml 2>/dev/null; git add bitbucket-pipelines.yml 2>/dev/null; true
 git commit -m "feat(prd): initialize product requirements for <product_name>
 
@@ -318,6 +333,7 @@ Mark task "Commit" as completed.
 Report to the user (in their language):
 1. PRD location: `docs/prd/PRD.md`
 2. Architecture: `docs/prd/ARCHITECTURE.md`
-3. Skills generated: list the **6 skills** with one-line descriptions
-4. CLAUDE.md files generated: list all stack guides
-5. Next step: "Run `/prd-evolve` whenever the product scope changes to keep all documents and skills in sync."
+3. Skills generated: list the **7 skills** with one-line descriptions
+4. Living documentation: list the docs/ files generated (index.md + 6 sub-files)
+5. CLAUDE.md files generated: list all stack guides
+6. Next step: "Run `/prd-evolve` whenever the product scope changes to keep all documents and skills in sync."

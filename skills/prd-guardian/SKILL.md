@@ -35,6 +35,7 @@ digraph prd_guardian {
 2. **project-architecture** — Is the technology/pattern I'm using in the canonical stack?
 3. **project-domain-rules** — Am I respecting domain invariants and ubiquitous language?
 4. **project-compliance** — Does this touch regulated data? Am I meeting all requirements?
+5. **project-docs** — After implementing: is the docs/ tree up to date with what was just built?
 
 ## Stale Skills Detection
 
@@ -70,6 +71,8 @@ These trigger regardless of what the project skills say:
 | `.claude/skills/project-architecture/` | Technical stack enforcement |
 | `.claude/skills/project-domain-rules/` | Business logic invariants |
 | `.claude/skills/project-compliance/` | Regulatory requirements |
+| `.claude/skills/project-docs/` | Living documentation maintenance |
+| `docs/index.md` | Project documentation entry point |
 | `backend/CLAUDE.md` | Backend development standards |
 | `frontend/CLAUDE.md` | Frontend development standards |
 | `infrastructure/CLAUDE.md` | Infrastructure standards |

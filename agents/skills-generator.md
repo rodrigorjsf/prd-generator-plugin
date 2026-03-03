@@ -1,6 +1,6 @@
 ---
 name: skills-generator
-description: Use this agent to generate or update the four project-specific enforcement skills (project-guardian, project-architecture, project-domain-rules, project-compliance) based on the finalized PRD and architecture. All skills are written in English and include a versioned header.
+description: Use this agent to generate or update the seven project-specific enforcement skills (project-guardian, project-architecture, project-domain-rules, project-compliance, project-docs-stack, project-cicd, project-docs) based on the finalized PRD and architecture. All skills are written in English and include a versioned header.
 
 <example>
 Context: PRD and architecture are finalized, ready to generate enforcement skills.
@@ -55,17 +55,18 @@ You create project-specific Claude Code enforcement skills that prevent AI codin
 
 ## Operating Modes
 
-### Mode: `full` — Generate all 4 skills
+### Mode: `full` — Generate all 7 skills
 
 ### Mode: `update` — Update only affected skills
 
 | Changed Field | Update These Skills |
 |---|---|
-| `functional_requirements` / `domain_rules` | project-guardian, project-domain-rules |
-| `architecture` / `stack` | project-architecture, project-guardian |
-| `compliance_requirements` / `regulatory` | project-compliance, project-guardian |
-| `ubiquitous_language` | project-domain-rules, project-guardian |
-| `new_technology` / `architecture_change` / `architecture_pivot` | project-architecture, project-guardian, project-docs-stack, project-cicd |
+| `functional_requirements` / `domain_rules` | project-guardian, project-domain-rules, project-docs |
+| `architecture` / `stack` | project-architecture, project-guardian, project-docs |
+| `compliance_requirements` / `regulatory` | project-compliance, project-guardian, project-docs |
+| `ubiquitous_language` | project-domain-rules, project-guardian, project-docs |
+| `new_technology` / `architecture_change` / `architecture_pivot` | project-architecture, project-guardian, project-docs-stack, project-cicd, project-docs |
+| `new_feature` / `removed_feature` / `integration_change` | project-guardian, project-domain-rules, project-docs |
 
 Process: Read existing skills, update ONLY affected sections, bump `prd_version` + `last_evolved` in frontmatter, append Evolution Log entry.
 
@@ -409,6 +410,198 @@ Before any PR merge, verify:
 
 ---
 
+## Skill 7: `project-docs`
+
+**File**: `.claude/skills/project-docs/SKILL.md`
+
+**Purpose**: Creates and maintains a living `docs/` documentation tree at the project root. Generates documentation from scratch on first run (CREATE mode, when `docs/index.md` absent), updates and removes stale content on subsequent runs (UPDATE mode). All documentation in English.
+
+**Template:**
+```markdown
+---
+name: project-docs
+description: Use after implementing any feature, fix, or code change in {product_name}, or when documentation needs refreshing. Generates and maintains docs/ as living documentation that always reflects the current implementation state.
+prd_version: {version}
+last_evolved: {date}
+---
+
+# Project Documentation — {Product Name}
+
+## Documentation Root
+
+`docs/` — living documentation tree for **{Product Name}**. All files in English.
+
+| File | Purpose |
+|------|---------|
+| `docs/index.md` | Entry point: overview, purpose, key facts, table of contents |
+| `docs/business.md` | Business context, product goals, target users, value proposition |
+| `docs/architecture.md` | Technical architecture with Mermaid diagrams |
+| `docs/structure.md` | Project directory tree, file conventions, monorepo boundaries |
+| `docs/development.md` | Dev patterns, coding standards, best practices, contribution guide |
+| `docs/tech-stack.md` | Full stack details, versions, justifications (distinct from docs/stack/ cache) |
+| `docs/local-setup.md` | Local run/test guide — API key placeholders, never real values |
+
+Additional files are added organically as the project evolves (e.g., `docs/deployment.md`, `docs/testing.md`, `docs/integrations.md`).
+
+## Execution Mode Detection
+
+| Signal | Mode |
+|--------|------|
+| `docs/index.md` does NOT exist | **CREATE** — generate all sub-files from scratch |
+| `docs/index.md` EXISTS | **UPDATE** — diff current docs vs implementation, update/remove stale content |
+
+## CREATE Mode
+
+**When**: `docs/index.md` is absent (first run — typically right after `/prd-new`).
+
+**Read these sources:**
+1. `docs/prd/PRD.md` — product vision, users, requirements, domain model
+2. `docs/prd/ARCHITECTURE.md` — stack, patterns, ADRs, Mermaid diagrams
+3. Project source file tree — `ls -la` / `find` to understand actual implemented structure
+4. Root and layer `CLAUDE.md` files — coding standards and patterns
+
+**Generate these files (in order):**
+
+1. **`docs/index.md`** — Entry point
+   - H1: product name
+   - 2–3 sentence project description (what it is, what problem it solves)
+   - Key facts table: language, stack summary, primary database, VCS, license
+   - Table of Contents with links to all sub-files
+   - Brief "How to use this documentation" note
+
+2. **`docs/business.md`** — Business context
+   - Product vision and problem statement (from PRD §1.1)
+   - Target users and personas (from PRD §1.2)
+   - Value proposition (from PRD §1.3)
+   - Success metrics / KPIs (from PRD §1.5)
+   - Core features summary (from PRD §2.1 — titles only, no sensitive implementation details)
+   - **Exclude**: pricing, revenue figures, confidential business data, user PII
+
+3. **`docs/architecture.md`** — Technical architecture
+   - System overview paragraph
+   - Mermaid system diagram (flowchart or C4 — choose what best represents the system)
+   - Layer structure table (from ARCHITECTURE.md)
+   - Data flow diagram (Mermaid sequenceDiagram or flowchart)
+   - Key architectural decisions summary (from ADRs in ARCHITECTURE.md)
+   - Cross-cutting concerns: auth, logging, error handling
+
+4. **`docs/structure.md`** — Project structure
+   - Monorepo directory tree (use actual source file tree, not PRD assumptions)
+   - Annotate each top-level directory with its purpose
+   - Key file locations table (entry points, config files, test directories)
+   - Service boundaries diagram (Mermaid flowchart showing service relationships)
+
+5. **`docs/development.md`** — Development guide
+   - Architecture pattern enforced (from ARCHITECTURE.md §Pattern)
+   - Coding standards summary (from CLAUDE.md files — key rules only)
+   - Naming conventions
+   - Contribution workflow (branch strategy from ARCHITECTURE.md infrastructure section)
+   - What never to do (from CLAUDE.md "What NEVER to Do" section)
+
+6. **`docs/tech-stack.md`** — Technology stack
+   - Full canonical stack table with Technology, Version, Layer, Justification columns (from ARCHITECTURE.md §Canonical Stack)
+   - Key dependencies diagram (Mermaid flowchart showing major library relationships)
+   - Why this stack was chosen (1–2 sentences per major technology)
+   - Version compatibility notes (if any ADRs mention version constraints)
+
+7. **`docs/local-setup.md`** — Local setup and testing
+   - Prerequisites (runtime versions, required tools)
+   - Installation steps (numbered, copy-pasteable)
+   - Environment variables section:
+     ```
+     # Required — obtain from [service name] dashboard
+     SERVICE_API_KEY=YOUR_SERVICE_API_KEY_HERE
+     DATABASE_URL=YOUR_DATABASE_URL_HERE
+     ```
+     **NEVER write actual key values. Always use `YOUR_<SERVICE>_KEY_HERE` pattern.**
+   - Start the application (numbered steps)
+   - Run tests (exact commands from project's test setup)
+   - Common troubleshooting (top 3–5 issues)
+
+## UPDATE Mode
+
+**When**: `docs/index.md` already exists (any run after the first).
+
+**Read:**
+1. All existing files in `docs/` (index.md + all sub-files)
+2. Current `docs/prd/PRD.md` and `docs/prd/ARCHITECTURE.md`
+3. Current source file tree
+4. Recent implementation changes (what was just built or changed)
+
+**For each doc file, apply this logic:**
+
+| Situation | Action |
+|-----------|--------|
+| Section content matches current implementation | Keep as-is |
+| Section content is outdated | Update to reflect current state |
+| Section describes a feature/component that was removed | Delete the section |
+| Implementation has new aspect not yet documented | Add new section or new sub-file |
+| Uncertain if section is still valid | Add `> **Verify**: This section may need review after recent changes.` callout — do NOT delete |
+
+**When to add a new sub-file** (create in addition to updating existing files):
+- A significant new domain was implemented (e.g., payments, notifications, search)
+- A new deployment target was added (e.g., `docs/deployment.md`)
+- A new integration was implemented (e.g., `docs/integrations.md`)
+- Testing strategy became complex enough to warrant its own file (e.g., `docs/testing.md`)
+
+**When to delete a doc sub-file entirely:**
+- The entire domain it documented was removed from the project
+- Only delete with clear evidence from the implementation (source files no longer exist)
+
+## Mermaid Diagram Guidelines
+
+Use Mermaid diagrams whenever they improve clarity over prose or tables. Choose the best diagram type:
+
+| Content | Diagram Type |
+|---------|-------------|
+| System architecture, data flow | `flowchart TD` or `flowchart LR` |
+| Request/response sequences | `sequenceDiagram` |
+| Data entity relationships | `erDiagram` |
+| State machines | `stateDiagram-v2` |
+| Object/domain models | `classDiagram` |
+
+**Color palette** (accessible on both light AND dark backgrounds):
+
+| Use for | Fill | Stroke | Text |
+|---------|------|--------|------|
+| Primary components | `#4A90D9` | `#2C6FAC` | `#FFFFFF` |
+| Success/active state | `#27AE60` | `#1E8449` | `#FFFFFF` |
+| Warning/caution | `#E8A838` | `#B7841C` | `#1A1A1A` |
+| Secondary components | `#9B59B6` | `#7D3C98` | `#FFFFFF` |
+| Neutral/container | `#ECF0F1` | `#95A5A6` | `#2C3E50` |
+
+Apply colors using `style NodeName fill:#4A90D9,stroke:#2C6FAC,color:#FFFFFF` declarations after the diagram definition.
+
+**Avoid**: pure red (#FF0000), bright green (#00FF00), yellow-on-white, red-green combinations (colorblind unfriendly).
+
+## API Key Safety Rule
+
+`docs/local-setup.md` MUST use placeholder syntax for ALL secrets and credentials:
+```
+STRIPE_SECRET_KEY=YOUR_STRIPE_SECRET_KEY_HERE
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
+DATABASE_URL=YOUR_DATABASE_URL_HERE
+JWT_SECRET=YOUR_JWT_SECRET_HERE
+```
+
+**NEVER**: write actual key values, read from `.env` files, copy from ARCHITECTURE.md env sections.
+**ALWAYS**: use `YOUR_<SERVICE>_<KEY_TYPE>_HERE` pattern.
+
+## Language Rule
+
+All documentation generated by this skill MUST be written in **English**.
+
+Exception: if during `/prd-new` brainstorm the user explicitly specified a non-English language for the project, match that language. Check `context_packet.meta.language` if available.
+
+## Evolution Log
+
+| Version | Date | Change |
+|---------|------|--------|
+| {version} | {date} | Initial generation — 7 sub-files: index, business, architecture, structure, development, tech-stack, local-setup |
+```
+
+---
+
 ## Template Interpretation Rules
 
 - `{variable_name}` (e.g., `{product_name}`) — replace with actual value
@@ -432,4 +625,5 @@ mkdir -p .claude/skills/project-domain-rules
 mkdir -p .claude/skills/project-compliance
 mkdir -p .claude/skills/project-docs-stack
 mkdir -p .claude/skills/project-cicd
+mkdir -p .claude/skills/project-docs
 ```

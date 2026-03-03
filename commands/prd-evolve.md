@@ -158,12 +158,23 @@ Dispatch `skills-generator` with:
 ```json
 {
   "mode": "update",
-  "affected_skills": ["<list from delta>"],
+  "affected_skills": ["<list from delta>", "project-docs"],
   "change_description": "$1",
   "new_prd_version": "<delta.new_prd_version>",
   "context_delta": "<delta output>"
 }
 ```
+
+(Note: `project-docs` is always included — any product delta warrants a documentation review.)
+
+**Sequential step — Apply project-docs skill UPDATE mode:**
+After skills-generator completes, invoke the project-docs skill UPDATE mode:
+1. Read current `docs/index.md` and all sub-files
+2. Read updated `docs/prd/PRD.md` and `docs/prd/ARCHITECTURE.md`
+3. Compare docs vs current implementation and the change described in `$1`
+4. Update stale sections, remove sections that no longer apply, add sections for new aspects
+Follow the skill instructions at `.claude/skills/project-docs/SKILL.md` exactly.
+Add updated docs/ files to the commit staging area.
 
 Mark task "Artifact Updates" as completed.
 
