@@ -2,6 +2,27 @@
 
 All notable changes to prd-generator-plugin will be documented in this file.
 
+## [2.1.0] - 2026-03-02
+
+### Added
+- New project skill: `project-docs` — generates and maintains a living `docs/` documentation tree at the project root
+- `docs/index.md` as the project documentation entry point, with table of contents linking to 6 standard sub-files
+- Standard doc sub-files: `docs/business.md`, `docs/architecture.md`, `docs/structure.md`, `docs/development.md`, `docs/tech-stack.md`, `docs/local-setup.md`
+- Mermaid diagram support in generated docs with accessible color palette for light/dark backgrounds
+- API key placeholder enforcement in `docs/local-setup.md` (never real values)
+- `/prd-docs` slash command for manual documentation refresh
+- `docs/` root files added to `/prd-new` Phase 5 (CREATE) and Phase 6 verification checklist
+- `project-docs` skill always included in `/prd-evolve` affected skills dispatch
+- `project-docs` added as item 5 in `prd-guardian` required check order
+
+### Changed
+- Plugin generates 7 project skills per project (was 6)
+- `/prd-new` Phase 5 now includes a sequential docs CREATE step after the 4 parallel agents
+- `/prd-new` Phase 7 commit now includes `docs/*.md` files
+- `/prd-new` completion summary reports 7 skills and lists generated docs files
+- `prd-guardian` quick reference table updated to include `project-docs` and `docs/index.md`
+- README monorepo structure diagram updated to show `docs/` root files
+
 ## [2.0.0] - 2026-03-01
 
 ### Added
